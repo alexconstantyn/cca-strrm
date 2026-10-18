@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StreamTV</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ ECRAN PRINCIPAL ============ -->
+<main id="home" class="screen">
+  <header class="top">
+    <h1>Stream<span>TV</span></h1>
+    <p class="sub">Canale Twitch pe televizor</p>
+  </header>
+
+  <div class="search">
+    <input id="q" class="focusable" type="text" placeholder="Scrie numele unui canal, de exemplu: monstercat"
+           autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <button id="go" class="focusable btn" type="button">Deschide</button>
+  </div>
+  <p id="msg" class="msg"></p>
+
+  <section>
+    <h2>Favorite</h2>
+    <div id="favs" class="grid"></div>
+  </section>
+
+  <section id="recent-sec">
+    <h2>Vizionate recent</h2>
+    <div id="recent" class="grid"></div>
+  </section>
+
+  <footer class="hints">
+    <span><b>OK</b> deschide</span>
+    <span><i class="dot red"></i> adaugă / scoate din favorite</span>
+    <span><b>Înapoi</b> ieșire</span>
+  </footer>
+</main>
+
+<!-- ============ ECRAN PLAYER ============ -->
+<section id="player-screen" class="screen" hidden>
+  <div id="stage">
+    <div id="player"></div>
+    <div id="chat"></div>
+  </div>
+
+  <div id="hotzone"></div>
+  <div id="status" class="status" hidden></div>
+
+  <div id="hud" class="hud">
+    <div class="hud-top">
+      <span id="hud-channel" class="hud-channel"></span>
+      <span id="hud-fav" class="hud-fav"></span>
+      <button id="hud-back" class="hud-btn" type="button">&#10005; Înapoi la listă</button>
+    </div>
+    <div class="hud-bottom">
+      <span><b>OK</b> pauză / redare</span>
+      <span><b>&#9664; &#9654;</b> canal anterior / următor</span>
+      <span><b>&#9650; &#9660;</b> volum</span>
+      <span><i class="dot red"></i> favorit</span>
+      <span><i class="dot green"></i> calitate</span>
+      <span><i class="dot yellow"></i> chat</span>
+      <span><i class="dot blue"></i> mut</span>
+      <span><b>Înapoi</b> listă</span>
+    </div>
+  </div>
+</section>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://player.twitch.tv/js/embed/v1.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
