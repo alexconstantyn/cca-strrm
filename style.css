@@ -1,14 +1,5 @@
-/* StreamTV - compatibil cu Chromium 79 (webOS 6): fără flex-gap, inset, aspect-ratio */
-
-:root {
-  --bg: #0d0d14;
-  --panel: #181826;
-  --panel-2: #222236;
-  --text: #f3f3f8;
-  --muted: #9b9bb4;
-  --accent: #8b5cf6;
-  --accent-soft: rgba(139, 92, 246, 0.55);
-}
+/* StreamTV - compatibil cu Chrome 38 (webOS 3.x): fără variabile CSS, fără grid, fără flex-gap.
+   Culori: fundal #0d0d14, panou #181826, panou 2 #222236, text #f3f3f8, discret #9b9bb4, accent #8b5cf6 */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 [hidden] { display: none !important; }
@@ -16,15 +7,15 @@
 html {
   /* 1rem = 16px pe un ecran de 1920px lățime; se scalează pe orice rezoluție */
   font-size: calc(100vw / 120);
-  background: var(--bg);
+  background: #0d0d14;
 }
 
 body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  color: var(--text);
-  background: var(--bg);
+  color: #f3f3f8;
+  background: #0d0d14;
   font-family: "LG Smart UI", "Segoe UI", Roboto, Arial, sans-serif;
 }
 
@@ -42,16 +33,16 @@ body {
   overflow-y: auto;
   padding: 4.2rem 6rem 7rem;
   background:
-    radial-gradient(60rem 30rem at 85% -10%, rgba(139, 92, 246, 0.22), transparent 70%),
-    radial-gradient(50rem 28rem at -10% 110%, rgba(34, 211, 238, 0.10), transparent 70%),
-    var(--bg);
+    radial-gradient(60rem 30rem at 85% -10%, rgba(139, 92, 246, 0.22), rgba(139, 92, 246, 0) 70%),
+    radial-gradient(50rem 28rem at -10% 110%, rgba(34, 211, 238, 0.10), rgba(34, 211, 238, 0) 70%),
+    #0d0d14;
 }
 #home::-webkit-scrollbar { display: none; }
 
 .top { margin-bottom: 2.6rem; }
-.top h1 { font-size: 3.6rem; font-weight: 800; letter-spacing: 0.02em; }
-.top h1 span { color: var(--accent); }
-.top .sub { margin-top: 0.4rem; font-size: 1.5rem; color: var(--muted); }
+.top h1 { font-size: 3.6rem; font-weight: 800; letter-spacing: 0.02em; color: #f3f3f8; }
+.top h1 span { color: #8b5cf6; }
+.top .sub { margin-top: 0.4rem; font-size: 1.5rem; color: #9b9bb4; }
 
 .search { display: flex; align-items: stretch; margin-bottom: 0.8rem; }
 #q {
@@ -59,13 +50,15 @@ body {
   height: 5rem;
   padding: 0 1.8rem;
   font-size: 1.7rem;
-  color: var(--text);
-  background: var(--panel);
-  border: 0.2rem solid var(--panel-2);
+  color: #f3f3f8;
+  background: #181826;
+  border: 0.2rem solid #222236;
   border-radius: 1rem;
   outline: none;
 }
-#q::placeholder { color: var(--muted); }
+#q::-webkit-input-placeholder { color: #9b9bb4; }
+#q::placeholder { color: #9b9bb4; }
+
 .btn {
   margin-left: 1.4rem;
   min-width: 14rem;
@@ -73,34 +66,42 @@ body {
   font-size: 1.7rem;
   font-weight: 700;
   color: #fff;
-  background: var(--accent);
+  background: #8b5cf6;
   border: 0.2rem solid transparent;
   border-radius: 1rem;
   outline: none;
   cursor: pointer;
 }
+.btn-ghost {
+  min-width: 15rem;
+  color: #f3f3f8;
+  background: #181826;
+  border-color: #222236;
+}
 
 .msg { min-height: 2.4rem; margin-bottom: 1.4rem; font-size: 1.4rem; color: #fca5a5; }
 
 section { margin-top: 1.4rem; }
-section h2 { margin-bottom: 1.2rem; font-size: 1.9rem; font-weight: 700; color: var(--muted); }
+section h2 { margin-bottom: 1.2rem; font-size: 1.9rem; font-weight: 700; color: #9b9bb4; }
 
+/* grila: rânduri flex cu trecere la rând nou */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
-  grid-gap: 1.8rem;
-  padding: 0.8rem 0.8rem 1.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0.8rem 0.8rem 0;
   margin: 0 -0.8rem;
 }
-.empty { grid-column: 1 / -1; font-size: 1.5rem; color: var(--muted); padding: 1rem 0.8rem; }
+.empty { width: 100%; font-size: 1.5rem; color: #9b9bb4; padding: 1rem 0.8rem 1.8rem; }
 
 .card {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 17rem;
+  margin: 0 1.8rem 1.8rem 0;
   padding: 2rem 1rem 1.6rem;
-  background: var(--panel);
-  border: 0.2rem solid var(--panel-2);
+  background: #181826;
+  border: 0.2rem solid #222236;
   border-radius: 1.2rem;
   cursor: pointer;
   outline: none;
@@ -125,16 +126,17 @@ section h2 { margin-bottom: 1.2rem; font-size: 1.9rem; font-weight: 700; color: 
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.card .tag { margin-top: 0.4rem; font-size: 1.2rem; color: var(--muted); }
+.card .tag { margin-top: 0.4rem; font-size: 1.2rem; color: #9b9bb4; }
 
 /* inel de focus - vizibil de la distanță */
 .focusable:focus {
   transform: scale(1.06);
   border-color: #fff;
-  box-shadow: 0 0 0 0.45rem var(--accent-soft), 0 1rem 2.4rem rgba(0, 0, 0, 0.5);
-  background-color: var(--panel-2);
+  box-shadow: 0 0 0 0.45rem rgba(139, 92, 246, 0.55), 0 1rem 2.4rem rgba(0, 0, 0, 0.5);
+  background-color: #222236;
 }
 .btn:focus { background-color: #a07bff; }
+.btn-ghost:focus { background-color: #222236; }
 
 .hints {
   position: fixed;
@@ -143,11 +145,11 @@ section h2 { margin-bottom: 1.2rem; font-size: 1.9rem; font-weight: 700; color: 
   bottom: 0;
   padding: 1.4rem 6rem;
   font-size: 1.3rem;
-  color: var(--muted);
+  color: #9b9bb4;
   background: linear-gradient(to top, rgba(13, 13, 20, 0.97), rgba(13, 13, 20, 0));
 }
 .hints span { margin-right: 3rem; }
-.hints b, .hud-bottom b { color: var(--text); }
+.hints b, .hud-bottom b, .diag-hint b { color: #f3f3f8; }
 
 .dot {
   display: inline-block;
@@ -168,6 +170,7 @@ section h2 { margin-bottom: 1.2rem; font-size: 1.9rem; font-weight: 700; color: 
 #stage { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: #000; }
 #player { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 #player iframe { width: 100%; height: 100%; border: 0; }
+#player video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #000; }
 #chat { position: absolute; top: 0; right: 0; bottom: 0; width: 28rem; display: none; background: #18181b; }
 #chat iframe { width: 100%; height: 100%; border: 0; }
 #stage.with-chat #player { right: 28rem; }
@@ -230,9 +233,10 @@ section h2 { margin-bottom: 1.2rem; font-size: 1.9rem; font-weight: 700; color: 
   font-size: 2rem;
   line-height: 1.4;
   text-align: center;
+  white-space: pre-line;
   color: #fff;
   background: rgba(24, 24, 38, 0.92);
-  border: 0.15rem solid var(--panel-2);
+  border: 0.15rem solid #222236;
   border-radius: 1.2rem;
   transform: translate(-50%, -50%);
 }
@@ -246,7 +250,7 @@ section h2 { margin-bottom: 1.2rem; font-size: 1.9rem; font-weight: 700; color: 
   font-size: 1.8rem;
   color: #fff;
   background: rgba(24, 24, 38, 0.95);
-  border: 0.15rem solid var(--accent-soft);
+  border: 0.15rem solid rgba(139, 92, 246, 0.55);
   border-radius: 5rem;
   transform: translateX(-50%);
   opacity: 0;
@@ -256,16 +260,6 @@ section h2 { margin-bottom: 1.2rem; font-size: 1.9rem; font-weight: 700; color: 
 .toast.show { opacity: 1; }
 
 /* ---------- Diagnostic ---------- */
-
-.btn-ghost {
-  min-width: 15rem;
-  color: var(--text);
-  background: var(--panel);
-  border-color: var(--panel-2);
-}
-.btn-ghost:focus { background-color: var(--panel-2); }
-
-.status { white-space: pre-line; }
 
 .diag {
   position: fixed;
@@ -286,5 +280,4 @@ section h2 { margin-bottom: 1.2rem; font-size: 1.9rem; font-weight: 700; color: 
   white-space: pre-wrap;
   word-break: break-all;
 }
-.diag-hint { margin-top: 2.4rem; font-size: 1.5rem; color: var(--muted); }
-.diag-hint b { color: var(--text); }
+.diag-hint { margin-top: 2.4rem; font-size: 1.5rem; color: #9b9bb4; }
