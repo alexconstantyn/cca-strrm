@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>StreamTV</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 
@@ -19,6 +19,7 @@
     <input id="q" class="focusable" type="text" placeholder="Scrie numele unui canal, de exemplu: monstercat"
            autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <button id="go" class="focusable btn" type="button">Deschide</button>
+    <button id="diag-btn" class="focusable btn btn-ghost" type="button">Diagnostic</button>
   </div>
   <p id="msg" class="msg"></p>
 
@@ -63,14 +64,21 @@
       <span><i class="dot green"></i> calitate</span>
       <span><i class="dot yellow"></i> chat</span>
       <span><i class="dot blue"></i> mut</span>
+      <span><b>0</b> diagnostic</span>
       <span><b>Înapoi</b> listă</span>
     </div>
   </div>
 </section>
 
+<!-- ============ DIAGNOSTIC ============ -->
+<div id="diag" class="diag" hidden>
+  <pre id="diag-text"></pre>
+  <p class="diag-hint"><b>OK</b> sau <b>Înapoi</b> = închide &nbsp;·&nbsp; <i class="dot green"></i> reîncearcă încărcarea playerului</p>
+</div>
+
 <div id="toast" class="toast"></div>
 
-<script src="https://player.twitch.tv/js/embed/v1.js"></script>
-<script src="app.js"></script>
+<!-- scriptul playerului Twitch este încărcat din app.js, ca să putem afla de ce eșuează -->
+<script src="app.js?v=2"></script>
 </body>
 </html>

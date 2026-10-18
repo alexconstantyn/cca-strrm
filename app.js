@@ -1,13 +1,15 @@
-/* StreamTV - player de canale Twitch pentru televizoare LG webOS.
+/* StreamTV v1.1 - player de canale Twitch pentru televizoare LG webOS.
  * Scris pentru Chromium 79 (webOS 6): fără ?. , ??, fără alte sintaxe noi.
  */
 (function () {
   'use strict';
 
+  var VERSION = '1.1';
+
   // ---------- Coduri taste (telecomanda LG + tastatură pentru test pe PC) ----------
   var KEY = {
     BKSP: 8, ENTER: 13, ESC: 27, PAUSE: 19,
-    CH_UP: 33, CH_DOWN: 34,
+    CH_UP: 33, CH_DOWN: 34, ZERO: 48,
     LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40,
     RED: 403, GREEN: 404, YELLOW: 405, BLUE: 406,
     STOP: 413, PLAY: 415, BACK: 461,
@@ -20,6 +22,7 @@
     screen: 'home',
     channel: null,
     player: null,
+    mode: null,          // 'api' (Twitch.Player) sau 'iframe' (mod simplu)
     chat: false,
     muted: false,
     volume: 0.8,
@@ -30,7 +33,92 @@
   var hudTimer = null;
   var toastTimer = null;
 
+  // ---------- Încărcarea scriptului Twitch + diagnostic ----------
+  var twitchApi = { state: 'loading', tries: 0 };   // loading | ready | error | noapi
+  var jsErrors = [];
+  var probes = {};
+
   function $(sel) { return document.querySelector(sel); }
+
+  function apiReady() { return !!(window.Twitch && window.Twitch.Player); }
+
+  function loadTwitchScript() {
+    twitchApi.tries++;
+    twitchApi.state = 'loading';
+    var s = document.createElement('script');
+    s.src = 'https://player.twitch.tv/js/embed/v1.js';
+    s.async = true;
+    s.onload = function () { twitchApi.state = apiReady() ? 'ready' : 'noapi'; };
+    s.onerror = function () {
+      twitchApi.state = 'error';
+      if (twitchApi.tries < 3) { setTimeout(loadTwitchScript, 2000 * twitchApi.tries); }
+    };
+    (document.head || document.documentElement).appendChild(s);
+  }
+
+  window.addEventListener('error', function (ev) {
+    var f = ev && ev.filename ? String(ev.filename).split('/').pop() : '';
+    jsErrors.push(String(ev && ev.message) + (f ? ' [' + f + ':' + ev.lineno + ']' : ''));
+    if (jsErrors.length > 4) { jsErrors.shift(); }
+  });
+
+  function probe(name, url) {
+    probes[name] = 'se testează…';
+    try {
+      fetch(url, { mode: 'no-cors', cache: 'no-store' }).then(
+        function () { probes[name] = 'OK'; refreshDiag(); },
+        function () { probes[name] = 'EȘUAT (rețea / certificat / blocat)'; refreshDiag(); }
+      );
+    } catch (e) { probes[name] = 'test indisponibil'; }
+  }
+
+  function diagText() {
+    var ua = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '?';
+    var m = ua.match(/Chrome\/[\d.]+/);
+    var lines = [
+      'DIAGNOSTIC StreamTV v' + VERSION,
+      '',
+      'Browser: ' + (m ? m[0] : ua),
+      'Adresa paginii: ' + (location.hostname || '(fișier local)'),
+      'Script Twitch: ' + twitchApi.state + '  (încercări: ' + twitchApi.tries + ')',
+      'API Twitch.Player disponibil: ' + (apiReady() ? 'da' : 'nu'),
+      'Mod redare: ' + (state.mode || '-'),
+      'Rețea player.twitch.tv: ' + (probes['player.twitch.tv'] || '-'),
+      'Rețea www.twitch.tv: ' + (probes['www.twitch.tv'] || '-'),
+      'Rețea static-cdn.jtvnw.net: ' + (probes['static-cdn.jtvnw.net'] || '-'),
+      'Erori JS: ' + (jsErrors.length ? '' : 'niciuna')
+    ];
+    jsErrors.forEach(function (x) { lines.push('  - ' + x); });
+    lines.push('', 'User-Agent: ' + ua);
+    return lines.join('\n');
+  }
+
+  function refreshDiag() {
+    if (!$('#diag').hidden) { $('#diag-text').textContent = diagText(); }
+  }
+
+  function showDiag() {
+    probe('player.twitch.tv', 'https://player.twitch.tv/js/embed/v1.js');
+    probe('www.twitch.tv', 'https://www.twitch.tv/');
+    probe('static-cdn.jtvnw.net', 'https://static-cdn.jtvnw.net/');
+    $('#diag').hidden = false;
+    refreshDiag();
+  }
+
+  function hideDiag() { $('#diag').hidden = true; }
+
+  function onDiagKey(e, k) {
+    if (k === KEY.ENTER || k === KEY.BACK || k === KEY.ESC || k === KEY.BKSP || k === KEY.ZERO) {
+      hideDiag();
+    } else if (k === KEY.GREEN || k === KEY.F2) {
+      twitchApi.tries = 0;
+      loadTwitchScript();
+      setTimeout(refreshDiag, 3000);
+      refreshDiag();
+    }
+    e.preventDefault();
+    e.stopPropagation();
+  }
 
   // ---------- Stocare locală (în try/catch: poate lipsi în unele contexte) ----------
   function load(key, fallback) {
@@ -65,7 +153,7 @@
     t.textContent = text;
     t.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2600);
   }
 
   function setMsg(text) { $('#msg').textContent = text || ''; }
@@ -233,10 +321,38 @@
     }
   }
 
+  // Mod simplu: iframe direct către player, fără scriptul API (controale limitate).
+  function startIframe(name) {
+    state.mode = 'iframe';
+    state.player = null;
+    hideStatus();
+    var box = $('#player');
+    box.innerHTML = '';
+    var f = document.createElement('iframe');
+    f.src = 'https://player.twitch.tv/?channel=' + encodeURIComponent(name) +
+            '&parent=' + encodeURIComponent(location.hostname) + '&muted=false&autoplay=true';
+    f.setAttribute('allowfullscreen', 'true');
+    f.setAttribute('allow', 'autoplay; fullscreen');
+    f.setAttribute('title', 'Twitch');
+    box.appendChild(f);
+    toast('Mod simplu: controale limitate (folosește cursorul). 0 = diagnostic');
+  }
+
+  // Așteaptă (maxim ~6 secunde) scriptul Twitch dacă încă se încarcă; altfel trece pe modul simplu.
+  function waitForApi(name, n) {
+    if (state.screen !== 'player' || state.channel !== name) { return; }
+    if (apiReady()) { startPlayer(name); return; }
+    if (twitchApi.state !== 'loading' || n >= 20) { startIframe(name); return; }
+    showStatus('Se încarcă playerul Twitch…');
+    setTimeout(function () { waitForApi(name, n + 1); }, 300);
+  }
+
   function startPlayer(name) {
     var box = $('#player');
     box.innerHTML = '';
     hideStatus();
+    state.player = null;
+    state.mode = null;
 
     var host = location.hostname;
     if (!host) {
@@ -244,11 +360,9 @@
                  'Altfel Twitch refuză să pornească playerul.');
       return;
     }
-    if (!window.Twitch || !Twitch.Player) {
-      showStatus('Nu pot încărca playerul Twitch. Verifică dacă televizorul are internet, apoi încearcă din nou.');
-      return;
-    }
+    if (!apiReady()) { waitForApi(name, 0); return; }
 
+    state.mode = 'api';
     var p = new Twitch.Player('player', {
       channel: name,
       parent: [host],
@@ -271,6 +385,7 @@
   function stopPlayer() {
     try { if (state.player && state.player.pause) { state.player.pause(); } } catch (e) { /* ignorăm */ }
     state.player = null;
+    state.mode = null;
     $('#player').innerHTML = '';
     $('#chat').innerHTML = '';
     $('#stage').classList.remove('with-chat');
@@ -331,33 +446,41 @@
     pushRecent(next);
     hideStatus();
     var p = state.player;
-    if (p && typeof p.setChannel === 'function') { p.setChannel(next); }
+    if (state.mode === 'iframe') { startIframe(next); }
+    else if (p && typeof p.setChannel === 'function') { p.setChannel(next); }
     else { startPlayer(next); }
     if (state.chat) { applyChat(); }
     toast(next);
   }
 
+  // Controalele de redare merg doar cu API-ul Twitch; în modul simplu le semnalăm.
+  function needApi() {
+    if (state.player) { return true; }
+    toast('Indisponibil în modul simplu. Folosește cursorul (Magic Remote) pe player.');
+    return false;
+  }
+
   function changeVolume(delta) {
+    if (!needApi()) { return; }
     state.volume = Math.max(0, Math.min(1, Math.round((state.volume + delta) * 10) / 10));
     save('streamtv.volume', state.volume);
     try {
-      if (state.player) {
-        state.player.setVolume(state.volume);
-        if (state.muted && delta > 0) { state.muted = false; state.player.setMuted(false); }
-      }
+      state.player.setVolume(state.volume);
+      if (state.muted && delta > 0) { state.muted = false; state.player.setMuted(false); }
     } catch (e) { /* ignorăm */ }
     toast('Volum player: ' + Math.round(state.volume * 100) + '%');
   }
 
   function toggleMute() {
+    if (!needApi()) { return; }
     state.muted = !state.muted;
-    try { if (state.player) { state.player.setMuted(state.muted); } } catch (e) { /* ignorăm */ }
+    try { state.player.setMuted(state.muted); } catch (e) { /* ignorăm */ }
     toast(state.muted ? 'Sunet oprit' : 'Sunet pornit');
   }
 
   function togglePlay(forceState) {
+    if (!needApi()) { return; }
     var p = state.player;
-    if (!p) { return; }
     try {
       hideStatus();
       if (forceState === 'play') { p.play(); }
@@ -382,8 +505,9 @@
   }
 
   function cycleQuality() {
+    if (!needApi()) { return; }
     var p = state.player;
-    if (!p || typeof p.getQualities !== 'function') { return; }
+    if (typeof p.getQualities !== 'function') { return; }
     try {
       var list = (p.getQualities() || []).map(qualityName);
       if (!list.length) { toast('Calitățile nu sunt disponibile încă'); return; }
@@ -425,6 +549,7 @@
       case KEY.GREEN: case KEY.F2: cycleQuality(); break;
       case KEY.YELLOW: case KEY.F3: toggleChat(); break;
       case KEY.BLUE: case KEY.F4: toggleMute(); break;
+      case KEY.ZERO: showDiag(); break;
       default: handled = false;
     }
     if (handled) {
@@ -472,6 +597,9 @@
         } else if (a && a.id === 'go') {
           e.preventDefault();
           submitSearch();
+        } else if (a && a.id === 'diag-btn') {
+          e.preventDefault();
+          showDiag();
         }
         break;
       case KEY.RED: case KEY.F1:
@@ -493,6 +621,7 @@
   }
 
   document.addEventListener('keydown', function (e) {
+    if (!$('#diag').hidden) { onDiagKey(e, e.keyCode); return; }
     if (state.screen === 'player') { onPlayerKey(e, e.keyCode); }
     else { onHomeKey(e, e.keyCode); }
   }, true);
@@ -508,7 +637,9 @@
   });
 
   $('#go').addEventListener('click', submitSearch);
+  $('#diag-btn').addEventListener('click', showDiag);
   $('#hud-back').addEventListener('click', goHome);
+  $('#diag').addEventListener('click', hideDiag);
   $('#hotzone').addEventListener('mouseenter', function () { if (state.screen === 'player') { showHud(); } });
   document.addEventListener('mousemove', function () { if (state.screen === 'player') { showHud(); } });
 
@@ -535,6 +666,7 @@
     state.volume = typeof vol === 'number' ? Math.max(0, Math.min(1, vol)) : 0.8;
     state.chat = load('streamtv.chat', false) === true;
 
+    loadTwitchScript();
     renderHome();
     focusChannelCard(state.favs[0]);
   })();
