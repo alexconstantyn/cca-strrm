@@ -36,7 +36,7 @@
     F1: 112, F2: 113, F3: 114, F4: 115
   };
 
-  var DEFAULT_FAVS = ['twitch', 'monstercat', 'criticalrole', 'riotgames'];
+  var DEFAULT_FAVS = ['zombilau', 'bobospider', 'riotgames'];
 
   var state = {
     screen: 'home',
@@ -93,7 +93,7 @@
     var proxy = getProxy();
     var proxyHost = proxy ? proxy.replace(/^https:\/\//, '').split('/')[0] : 'niciunul (cerere directă)';
     var lines = [
-      'DIAGNOSTIC StreamTV v' + VERSION,
+      'DIAGNOSTIC CCA-StrrmTV v' + VERSION,
       '',
       'Browser: ' + (m ? m[0] : ua),
       'Adresa paginii: ' + (location.hostname || '(fișier local)'),
